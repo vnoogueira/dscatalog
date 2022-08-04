@@ -12,8 +12,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.vnoogueira.dscatolog.dto.CategoryDTO;
 import com.vnoogueira.dscatolog.dto.ProductDTO;
+import com.vnoogueira.dscatolog.entities.Category;
 import com.vnoogueira.dscatolog.entities.Product;
+import com.vnoogueira.dscatolog.repositories.CategoryRepository;
 import com.vnoogueira.dscatolog.repositories.ProductRepository;
 import com.vnoogueira.dscatolog.services.exceptions.ResourceNotFoundException;
 
@@ -22,6 +25,9 @@ public class ProductService {
 
 	@Autowired
 	private ProductRepository repository;
+
+	@Autowired
+	private CategoryRepository categoryRepository;
 
 	@Transactional(readOnly = true)
 	public Page<ProductDTO> findAllPaged(PageRequest pageRequest) {
@@ -42,10 +48,7 @@ public class ProductService {
 	@Transactional
 	public ProductDTO insertProduct(ProductDTO obj) {
 		Product entity = new Product();
-		entity.setName(obj.getName());
-		entity.setDescription(obj.getDescription());
-		entity.setPrice(obj.getPrice());
-		entity.setImgUrl(obj.getImgUrl());
+		copyDtoToEntity(obj, entity);
 		entity = repository.save(entity);
 		return new ProductDTO(entity);
 	}
@@ -55,11 +58,7 @@ public class ProductService {
 		try {
 
 			Product entity = repository.getReferenceById(id);
-			entity.setName(obj.getName());
-			entity.setDescription(obj.getDescription());
-			entity.setPrice(obj.getPrice());
-			entity.setImgUrl(obj.getImgUrl());
-			entity = repository.save(entity);
+			copyDtoToEntity(obj, entity);
 			return new ProductDTO(entity);
 
 		} catch (EntityNotFoundException e) {
@@ -78,6 +77,21 @@ public class ProductService {
 
 		}
 
+	}
+
+	private void copyDtoToEntity(ProductDTO obj, Product entity) {
+		entity.setName(obj.getName());
+		entity.setDate(obj.getDate());
+		entity.setDescription(obj.getDescription());
+		entity.setPrice(obj.getPrice());
+		entity.setImgUrl(obj.getImgUrl());
+		entity.getCategory().clear();
+
+		for (CategoryDTO catDto : obj.getCategories()) {
+			Category category = categoryRepository.getReferenceById(catDto.getId());
+			entity.getCategory().add(category);
+
+		}
 	}
 
 }
